@@ -54,6 +54,12 @@ public class DeviceAppService : IDeviceAppService
         var existing = await _deviceRepository.GetByConnectionStringAsync(domainConnection, ct);
         var device = existing ?? Domain.Device.Device.Create(deviceName);
 
+        if (existing != null)
+        {
+            device.Rename(deviceName);
+            device.Disconnect();
+        }
+
         device.BeginConnect(domainConnection);
 
         try

@@ -8,27 +8,27 @@ namespace BertBridge.Infrastructure.PluginSystem;
 public class DeviceAdapterFactory : IDeviceAdapterFactory
 {
     private readonly Dictionary<Guid, IDeviceAdapter> _onlineAdapters = [];
-    private readonly IReadOnlyList<IDeviceAdapter> _availableAdapters;
+    private readonly IReadOnlyList<DeviceAdapterDescriptor> _adapterDescriptors;
     private readonly IServiceProvider _serviceProvider;
     private readonly ILogger<DeviceAdapterFactory> _logger;
 
     public DeviceAdapterFactory(
-        IEnumerable<IDeviceAdapter> availableAdapters,
+        IEnumerable<DeviceAdapterDescriptor> adapterDescriptors,
         IServiceProvider serviceProvider,
         ILogger<DeviceAdapterFactory> logger)
     {
-        _availableAdapters = availableAdapters.ToList();
+        _adapterDescriptors = adapterDescriptors.ToList();
         _serviceProvider = serviceProvider;
         _logger = logger;
     }
 
     public IDeviceAdapter CreateAdapter(ConnectionString connectionString)
     {
-        var prototype = _availableAdapters.FirstOrDefault(a => a.CanHandle(connectionString));
-        if (prototype == null)
+        var descriptor = _adapterDescriptors.FirstOrDefault(d => CanDescriptorHandle(d, connectionString));
+        if (descriptor == null)
             throw new InvalidOperationException($"No adapter can handle connection string: {connectionString}");
 
-        return (IDeviceAdapter)ActivatorUtilities.CreateInstance(_serviceProvider, prototype.GetType());
+        return (IDeviceAdapter)ActivatorUtilities.CreateInstance(_serviceProvider, descriptor.AdapterType);
     }
 
     public IDeviceAdapter? GetAdapter(Guid deviceId)
@@ -57,5 +57,18 @@ public class DeviceAdapterFactory : IDeviceAdapterFactory
     }
 
     public bool CanHandle(ConnectionString connectionString)
-        => _availableAdapters.Any(a => a.CanHandle(connectionString));
+        => _adapterDescriptors.Any(d => CanDescriptorHandle(d, connectionString));
+
+    private bool CanDescriptorHandle(DeviceAdapterDescriptor descriptor, ConnectionString connectionString)
+    {
+        var adapter = (IDeviceAdapter)ActivatorUtilities.CreateInstance(_serviceProvider, descriptor.AdapterType);
+        try
+        {
+            return adapter.CanHandle(connectionString);
+        }
+        finally
+        {
+            adapter.DisposeAsync().AsTask().GetAwaiter().GetResult();
+        }
+    }
 }

@@ -44,8 +44,8 @@ public static class DependencyInjection
             var discovery = sp.GetRequiredService<PluginDiscoveryService>();
             var pluginsPath = configuration["Plugins:Path"]
                 ?? Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Plugins");
-            var discoveredAdapters = discovery.DiscoverAdapters(pluginsPath);
-            var registeredAdapters = sp.GetServices<IDeviceAdapter>();
+            var discoveredAdapters = discovery.DiscoverAdapterDescriptors(pluginsPath);
+            var registeredAdapters = sp.GetServices<DeviceAdapterDescriptor>();
             var adapters = registeredAdapters.Concat(discoveredAdapters).ToList();
 
             return new DeviceAdapterFactory(adapters, sp, logger);

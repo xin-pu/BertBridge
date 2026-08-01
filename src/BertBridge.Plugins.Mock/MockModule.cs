@@ -14,7 +14,7 @@ public static class MockModule
     /// </summary>
     public static IServiceCollection AddMockPlugin(this IServiceCollection services)
     {
-        services.AddTransient<IDeviceAdapter, MockAdapter>();
+        services.AddSingleton(DeviceAdapterDescriptor.FromAdapterType(typeof(MockAdapter), "builtin"));
         return services;
     }
 }
