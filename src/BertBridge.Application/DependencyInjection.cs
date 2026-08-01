@@ -27,9 +27,6 @@ public static class DependencyInjection
             cfg.RegisterServicesFromAssembly(typeof(DependencyInjection).Assembly);
         });
 
-        // AutoMapper
-        services.AddAutoMapper(typeof(DependencyInjection).Assembly);
-
         return services;
     }
 }
