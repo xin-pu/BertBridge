@@ -20,7 +20,8 @@ var host = Host.CreateDefaultBuilder(args)
         services.AddBertBridgeInfrastructure(ctx.Configuration);
 
         // 开发阶段直接注册 Mock 插件
-        if (ctx.HostingEnvironment.IsDevelopment() || true)
+        if (ctx.HostingEnvironment.IsDevelopment() ||
+            ctx.Configuration.GetValue<bool>("Plugins:EnableMock"))
         {
             services.AddMockPlugin();
         }

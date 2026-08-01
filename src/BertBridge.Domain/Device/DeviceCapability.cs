@@ -36,7 +36,7 @@ public sealed class DeviceCapability : Shared.ValueObject
         int maxLanes,
         bool supportsPAM4,
         bool supportsAdvancedModulation,
-        IEnumerable<string> supportedPatterns,
+        IReadOnlyList<string> supportedPatterns,
         decimal maxBaudRateGBd,
         bool supportsFec,
         bool supportsGpio,

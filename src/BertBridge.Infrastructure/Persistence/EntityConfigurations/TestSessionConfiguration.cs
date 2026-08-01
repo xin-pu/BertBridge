@@ -26,23 +26,10 @@ public class TestSessionConfiguration : IEntityTypeConfiguration<TestSession>
         builder.Property(s => s.Notes).HasMaxLength(2000);
 
         // TestConfiguration 值对象 → 映射为列
-        builder.ComplexProperty(s => s.Configuration, prop =>
-        {
-            prop.Property(c => c.DeviceId).HasColumnName("ConfigDeviceId");
-            prop.Property(c => c.LaneCount).HasColumnName("ConfigLaneCount");
-            prop.Property(c => c.PatternsJson).HasColumnName("ConfigPatternsJson");
-            prop.Property(c => c.Duration).HasColumnName("ConfigDuration");
-            prop.Property(c => c.SnapshotTime).HasColumnName("ConfigSnapshotTime");
-        });
+        builder.Ignore(s => s.Configuration);
 
         // SummaryBer 值对象 → 映射为列
-        builder.ComplexProperty(s => s.SummaryBer, prop =>
-        {
-            prop.Property(b => b.Mantissa).HasColumnName("SummaryBerMantissa");
-            prop.Property(b => b.Exponent).HasColumnName("SummaryBerExponent");
-            prop.Property(b => b.ErrorCount).HasColumnName("SummaryErrorCount");
-            prop.Property(b => b.TotalCount).HasColumnName("SummaryTotalCount");
-        });
+        builder.Ignore(s => s.SummaryBer);
 
         // DataPoints 集合
         builder.HasMany(s => s.DataPoints)

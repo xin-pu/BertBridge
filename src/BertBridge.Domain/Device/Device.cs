@@ -9,7 +9,7 @@ namespace BertBridge.Domain.Device;
 public class Device : BaseAggregateRoot
 {
     /// <summary>设备唯一标识</summary>
-    public DeviceId DeviceId { get; }
+    public DeviceId DeviceId => new(Id);
 
     /// <summary>设备基本信息</summary>
     public DeviceInfo? Info { get; private set; }
@@ -30,9 +30,14 @@ public class Device : BaseAggregateRoot
     /// <summary>当前设备名称/别名</summary>
     public string DeviceName { get; private set; }
 
+    private Device() : base()
+    {
+        DeviceName = string.Empty;
+        State = ConnectionState.Disconnected;
+    }
+
     private Device(DeviceId deviceId, string deviceName) : base(deviceId.Value)
     {
-        DeviceId = deviceId;
         DeviceName = !string.IsNullOrWhiteSpace(deviceName)
             ? deviceName
             : throw new ArgumentException("设备名称不能为空。", nameof(deviceName));

@@ -56,6 +56,9 @@ public sealed class ConnectionString : Shared.ValueObject
             throw new ArgumentException("连接字符串不能为空。", nameof(raw));
 
         // 尝试 TCP 格式: host:port (不含 COM 前缀)
+        if (raw.StartsWith("mock://", StringComparison.OrdinalIgnoreCase))
+            return new ConnectionString(ConnectionProtocol.Mock, raw);
+
         if (!raw.StartsWith("COM", StringComparison.OrdinalIgnoreCase))
         {
             var parts = raw.Split(':');
@@ -89,5 +92,6 @@ public sealed class ConnectionString : Shared.ValueObject
 public enum ConnectionProtocol
 {
     Serial,
-    Tcp
+    Tcp,
+    Mock
 }

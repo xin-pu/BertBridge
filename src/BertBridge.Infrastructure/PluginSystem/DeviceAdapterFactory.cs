@@ -1,47 +1,61 @@
 using BertBridge.Application.Contracts;
 using BertBridge.PluginSDK;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
 namespace BertBridge.Infrastructure.PluginSystem;
 
-/// <summary>
-/// 设备适配器工厂实现。管理 DeviceId → IDeviceAdapter 的映射。
-/// </summary>
 public class DeviceAdapterFactory : IDeviceAdapterFactory
 {
-    private readonly Dictionary<Guid, IDeviceAdapter> _adapters = [];
+    private readonly Dictionary<Guid, IDeviceAdapter> _onlineAdapters = [];
     private readonly IReadOnlyList<IDeviceAdapter> _availableAdapters;
+    private readonly IServiceProvider _serviceProvider;
     private readonly ILogger<DeviceAdapterFactory> _logger;
 
-    public DeviceAdapterFactory(IEnumerable<IDeviceAdapter> availableAdapters, ILogger<DeviceAdapterFactory> logger)
+    public DeviceAdapterFactory(
+        IEnumerable<IDeviceAdapter> availableAdapters,
+        IServiceProvider serviceProvider,
+        ILogger<DeviceAdapterFactory> logger)
     {
         _availableAdapters = availableAdapters.ToList();
+        _serviceProvider = serviceProvider;
         _logger = logger;
+    }
+
+    public IDeviceAdapter CreateAdapter(ConnectionString connectionString)
+    {
+        var prototype = _availableAdapters.FirstOrDefault(a => a.CanHandle(connectionString));
+        if (prototype == null)
+            throw new InvalidOperationException($"No adapter can handle connection string: {connectionString}");
+
+        return (IDeviceAdapter)ActivatorUtilities.CreateInstance(_serviceProvider, prototype.GetType());
     }
 
     public IDeviceAdapter? GetAdapter(Guid deviceId)
     {
-        _adapters.TryGetValue(deviceId, out var adapter);
+        _onlineAdapters.TryGetValue(deviceId, out var adapter);
         return adapter;
     }
 
     public void RegisterAdapter(Guid deviceId, IDeviceAdapter adapter)
     {
-        _adapters[deviceId] = adapter;
-        _logger.LogInformation("适配器已注册: DeviceId={DeviceId}, Adapter={AdapterType}",
-            deviceId, adapter.GetType().Name);
+        _onlineAdapters[deviceId] = adapter;
+        _logger.LogInformation(
+            "Adapter registered: DeviceId={DeviceId}, Adapter={AdapterType}",
+            deviceId,
+            adapter.GetType().Name);
     }
 
-    public void UnregisterAdapter(Guid deviceId)
+    public async ValueTask UnregisterAdapterAsync(Guid deviceId)
     {
-        if (_adapters.Remove(deviceId, out var adapter))
+        if (_onlineAdapters.Remove(deviceId, out var adapter))
         {
-            _logger.LogInformation("适配器已注销: DeviceId={DeviceId}", deviceId);
+            await adapter.DisconnectAsync();
+            await adapter.DisposeAsync();
+            _logger.LogInformation("Adapter unregistered: DeviceId={DeviceId}", deviceId);
         }
     }
 
-    public bool CanHandle(PluginSDK.ConnectionString connectionString)
-    {
-        return _availableAdapters.Any();
-    }
+    public bool CanHandle(ConnectionString connectionString)
+        => _availableAdapters.Any(a => a.CanHandle(connectionString));
 }

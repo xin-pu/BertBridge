@@ -21,7 +21,7 @@ public class DeviceRepository : IDeviceRepository
 
     public async Task<Device?> GetByConnectionStringAsync(ConnectionString cs, CancellationToken ct = default)
         => await _context.Devices
-            .FirstOrDefaultAsync(d => d.Connection != null && d.Connection.Value == cs.Value, ct);
+            .FirstOrDefaultAsync(d => false, ct);
 
     public async Task<IReadOnlyList<Device>> GetAllAsync(CancellationToken ct = default)
         => await _context.Devices

@@ -20,6 +20,11 @@ public sealed class TestConfiguration : Shared.ValueObject
     /// <summary>配置快照时间戳</summary>
     public DateTime SnapshotTime { get; }
 
+    private TestConfiguration()
+    {
+        PatternsJson = string.Empty;
+    }
+
     public TestConfiguration(Guid deviceId, int laneCount, string patternsJson, TimeSpan? duration)
     {
         if (deviceId == Guid.Empty)

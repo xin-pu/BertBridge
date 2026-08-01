@@ -1,12 +1,13 @@
-﻿<Window x:Class="BertBridge.GUI.MainWindow"
+<Window x:Class="BertBridge.GUI.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        xmlns:local="clr-namespace:BertBridge.GUI"
-        mc:Ignorable="d"
-        Title="MainWindow" Height="450" Width="800">
-    <Grid>
-
-    </Grid>
+        xmlns:views="clr-namespace:BertBridge.GUI.Views"
+        Title="BertBridge" Height="520" Width="920">
+    <DockPanel>
+        <ToolBar DockPanel.Dock="Top">
+            <Button Content="Refresh" Command="{Binding LoadDevicesCommand}" />
+            <TextBlock Margin="12,0,0,0" VerticalAlignment="Center" Text="{Binding StatusMessage}" />
+        </ToolBar>
+        <views:DeviceListView />
+    </DockPanel>
 </Window>

@@ -8,6 +8,8 @@ namespace BertBridge.Application.Contracts;
 /// </summary>
 public interface IDeviceAdapterFactory
 {
+    IDeviceAdapter CreateAdapter(PluginSDK.ConnectionString connectionString);
+
     /// <summary>获取指定设备的适配器</summary>
     IDeviceAdapter? GetAdapter(Guid deviceId);
 
@@ -15,7 +17,7 @@ public interface IDeviceAdapterFactory
     void RegisterAdapter(Guid deviceId, IDeviceAdapter adapter);
 
     /// <summary>注销适配器（断开时调用）</summary>
-    void UnregisterAdapter(Guid deviceId);
+    ValueTask UnregisterAdapterAsync(Guid deviceId);
 
     /// <summary>检查是否有适配器能处理指定的连接字符串</summary>
     bool CanHandle(PluginSDK.ConnectionString connectionString);

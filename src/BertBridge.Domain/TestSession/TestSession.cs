@@ -38,6 +38,12 @@ public class TestSession : BaseAggregateRoot
     /// <summary>汇总 BER</summary>
     public ErrorDetection.BerValue? SummaryBer { get; private set; }
 
+    private TestSession() : base()
+    {
+        Configuration = null!;
+        Status = TestStatus.Idle;
+    }
+
     private TestSession(Guid id, Guid deviceId, TestConfiguration configuration) : base(id)
     {
         DeviceId = deviceId;

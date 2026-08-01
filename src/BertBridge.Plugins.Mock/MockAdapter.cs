@@ -36,6 +36,9 @@ public sealed class MockAdapter : IDeviceAdapter
 
     // ── 连接管理 ──
 
+    public bool CanHandle(ConnectionString connectionString)
+        => connectionString.Protocol == ConnectionProtocol.Mock;
+
     public Task ConnectAsync(ConnectionString connectionString, CancellationToken ct = default)
     {
         _logger.LogInformation("Mock 设备连接中: {ConnectionString}", connectionString);

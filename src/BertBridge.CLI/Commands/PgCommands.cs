@@ -54,8 +54,8 @@ internal static class PgCommands
         {
             var deviceId = ctx.ParseResult.GetValueForArgument(deviceIdArg);
             var laneIndex = ctx.ParseResult.GetValueForArgument(laneIndexArg);
-            var pattern = ctx.ParseResult.GetValueForOption(patternOpt);
-            var mode = ctx.ParseResult.GetValueForOption(modeOpt);
+            var pattern = ctx.ParseResult.GetValueForOption(patternOpt) ?? "PRBS31";
+            var mode = ctx.ParseResult.GetValueForOption(modeOpt) ?? "SingleStream";
             var custom = ctx.ParseResult.GetValueForOption(customOpt);
             var swing = ctx.ParseResult.GetValueForOption(swingOpt);
             var gray = ctx.ParseResult.GetValueForOption(grayOpt);

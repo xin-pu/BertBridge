@@ -1,4 +1,5 @@
 using Serilog;
+using Serilog.Events;
 
 namespace BertBridge.Infrastructure.Logging;
 
@@ -13,7 +14,8 @@ public static class SerilogConfiguration
     public static void Configure()
     {
         Log.Logger = new LoggerConfiguration()
-            .MinimumLevel.Debug()
+            .MinimumLevel.Information()
+            .MinimumLevel.Override("Microsoft", LogEventLevel.Warning)
             .WriteTo.Console(outputTemplate:
                 "[{Timestamp:HH:mm:ss} {Level:u3}] {Message:lj}{NewLine}{Exception}")
             .WriteTo.File("logs/bertbridge-.log",

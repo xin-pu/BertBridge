@@ -11,6 +11,8 @@ public interface IDeviceAdapter : IAsyncDisposable
     /// <summary>连接设备</summary>
     Task ConnectAsync(ConnectionString connectionString, CancellationToken ct = default);
 
+    bool CanHandle(ConnectionString connectionString);
+
     /// <summary>断开设备</summary>
     Task DisconnectAsync();
 

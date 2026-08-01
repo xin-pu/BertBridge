@@ -4,9 +4,11 @@ using BertBridge.Domain.TestSession;
 using BertBridge.Infrastructure.Persistence;
 using BertBridge.Infrastructure.Persistence.Repositories;
 using BertBridge.Infrastructure.PluginSystem;
+using BertBridge.PluginSDK;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Serilog;
 
 namespace BertBridge.Infrastructure;
@@ -42,9 +44,11 @@ public static class DependencyInjection
             var discovery = sp.GetRequiredService<PluginDiscoveryService>();
             var pluginsPath = configuration["Plugins:Path"]
                 ?? Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Plugins");
-            var adapters = discovery.DiscoverAdapters(pluginsPath);
+            var discoveredAdapters = discovery.DiscoverAdapters(pluginsPath);
+            var registeredAdapters = sp.GetServices<IDeviceAdapter>();
+            var adapters = registeredAdapters.Concat(discoveredAdapters).ToList();
 
-            return new DeviceAdapterFactory(adapters, logger);
+            return new DeviceAdapterFactory(adapters, sp, logger);
         });
 
         // 设备通信
@@ -57,6 +61,7 @@ public static class DependencyInjection
         // Serilog
         services.AddLogging(builder =>
         {
+            builder.ClearProviders();
             Logging.SerilogConfiguration.Configure();
             builder.AddSerilog();
         });

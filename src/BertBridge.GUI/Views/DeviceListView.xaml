@@ -1,0 +1,17 @@
+<UserControl x:Class="BertBridge.GUI.Views.DeviceListView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <Grid>
+        <DataGrid ItemsSource="{Binding Devices}"
+                  AutoGenerateColumns="False"
+                  IsReadOnly="True"
+                  CanUserAddRows="False">
+            <DataGrid.Columns>
+                <DataGridTextColumn Header="ID" Binding="{Binding Id}" Width="2*" />
+                <DataGridTextColumn Header="Name" Binding="{Binding DeviceName}" Width="*" />
+                <DataGridTextColumn Header="Model" Binding="{Binding Model}" Width="*" />
+                <DataGridTextColumn Header="State" Binding="{Binding ConnectionState}" Width="*" />
+            </DataGrid.Columns>
+        </DataGrid>
+    </Grid>
+</UserControl>

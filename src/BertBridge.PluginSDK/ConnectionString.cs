@@ -6,7 +6,8 @@ namespace BertBridge.PluginSDK;
 public enum ConnectionProtocol
 {
     Serial,
-    Tcp
+    Tcp,
+    Mock
 }
 
 /// <summary>
@@ -34,6 +35,9 @@ public sealed record ConnectionString(
     public static ConnectionString FromTcp(string host, int port)
         => new(ConnectionProtocol.Tcp, $"{host}:{port}");
 
+    public static ConnectionString FromMock(string name)
+        => new(ConnectionProtocol.Mock, $"mock://{name}");
+
     /// <summary>
     /// 从原始字符串解析连接信息。
     /// </summary>
@@ -41,6 +45,9 @@ public sealed record ConnectionString(
     {
         if (string.IsNullOrWhiteSpace(raw))
             throw new ArgumentException("连接字符串不能为空。", nameof(raw));
+
+        if (raw.StartsWith("mock://", StringComparison.OrdinalIgnoreCase))
+            return FromMock(raw["mock://".Length..]);
 
         if (!raw.StartsWith("COM", StringComparison.OrdinalIgnoreCase))
         {
