@@ -1,6 +1,7 @@
 ﻿using System.CommandLine;
 using BertBridge.Application;
 using BertBridge.Infrastructure;
+using BertBridge.Infrastructure.Persistence;
 using BertBridge.Plugins.Mock;
 using BertBridge.CLI.Commands;
 using Microsoft.Extensions.Configuration;
@@ -31,8 +32,8 @@ var host = Host.CreateDefaultBuilder(args)
 // 确保数据库已创建
 using (var scope = host.Services.CreateScope())
 {
-    var dbContext = scope.ServiceProvider.GetRequiredService<BertBridge.Infrastructure.Persistence.BertBridgeDbContext>();
-    await dbContext.Database.EnsureCreatedAsync();
+    var dbContext = scope.ServiceProvider.GetRequiredService<BertBridgeDbContext>();
+    await dbContext.EnsureSchemaAsync();
 }
 
 // ── 构建命令树 ──

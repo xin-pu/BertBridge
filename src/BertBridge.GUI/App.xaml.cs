@@ -2,6 +2,7 @@ using System.Windows;
 using BertBridge.Application;
 using BertBridge.GUI.ViewModels;
 using BertBridge.Infrastructure;
+using BertBridge.Infrastructure.Persistence;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -32,6 +33,12 @@ public partial class App : System.Windows.Application
             .Build();
 
         await _host.StartAsync();
+
+        using (var scope = _host.Services.CreateScope())
+        {
+            var dbContext = scope.ServiceProvider.GetRequiredService<BertBridgeDbContext>();
+            await dbContext.EnsureSchemaAsync();
+        }
 
         var mainWindow = _host.Services.GetRequiredService<MainWindow>();
         mainWindow.Show();

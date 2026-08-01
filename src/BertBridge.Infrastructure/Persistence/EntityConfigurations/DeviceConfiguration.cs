@@ -20,32 +20,42 @@ public class DeviceConfiguration : IEntityTypeConfiguration<Device>
             .IsRequired()
             .HasMaxLength(200);
 
-        // DeviceId 值对象 → 映射为列
         builder.Ignore(d => d.DeviceId);
 
-        // DeviceInfo 值对象 → 映射为列
         builder.Ignore(d => d.Info);
+        builder.Property<string?>("_infoModel").HasColumnName("InfoModel").HasMaxLength(100);
+        builder.Property<string?>("_infoSerialNumber").HasColumnName("InfoSerialNumber").HasMaxLength(100);
+        builder.Property<string?>("_infoFirmwareVersion").HasColumnName("InfoFirmwareVersion").HasMaxLength(100);
+        builder.Property<string?>("_infoBoardType").HasColumnName("InfoBoardType").HasMaxLength(100);
 
-        // ConnectionString 值对象 → 映射为列
         builder.Ignore(d => d.Connection);
+        builder.Property<string?>("_connectionValue").HasColumnName("ConnectionValue").HasMaxLength(500);
+        builder.Property<ConnectionProtocol?>("_connectionProtocol")
+            .HasColumnName("ConnectionProtocol")
+            .HasConversion<string>()
+            .HasMaxLength(20);
 
-        // ConnectionState → 存储为字符串
         builder.Property(d => d.State)
             .HasConversion<string>()
             .HasMaxLength(20);
 
-        // DeviceCapability 值对象 → 映射为列
         builder.Ignore(d => d.Capability);
+        builder.Property<int?>("_capabilityMaxLanes").HasColumnName("CapabilityMaxLanes");
+        builder.Property<bool?>("_capabilitySupportsPAM4").HasColumnName("CapabilitySupportsPAM4");
+        builder.Property<bool?>("_capabilitySupportsAdvancedModulation").HasColumnName("CapabilitySupportsAdvancedModulation");
+        builder.Property<string?>("_capabilitySupportedPatternsJson").HasColumnName("CapabilitySupportedPatternsJson");
+        builder.Property<decimal?>("_capabilityMaxBaudRateGBd").HasColumnName("CapabilityMaxBaudRateGBd");
+        builder.Property<bool?>("_capabilitySupportsFec").HasColumnName("CapabilitySupportsFec");
+        builder.Property<bool?>("_capabilitySupportsGpio").HasColumnName("CapabilitySupportsGpio");
+        builder.Property<int?>("_capabilityFirTapCount").HasColumnName("CapabilityFirTapCount");
+        builder.Property<bool?>("_capabilitySupportsJitterInjection").HasColumnName("CapabilitySupportsJitterInjection");
 
-        // Lanes 集合 → 一对多关系
         builder.HasMany(d => d.Lanes)
             .WithOne()
             .HasForeignKey("DeviceId")
             .OnDelete(DeleteBehavior.Cascade);
 
         builder.Navigation(d => d.Lanes).AutoInclude();
-
-        // 忽略运行时字段
         builder.Ignore(d => d.DomainEvents);
     }
 }

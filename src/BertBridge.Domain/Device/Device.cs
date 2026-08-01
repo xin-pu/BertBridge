@@ -1,33 +1,69 @@
 using BertBridge.Domain.Shared;
+using System.Text.Json;
 
 namespace BertBridge.Domain.Device;
 
 /// <summary>
-/// Device 聚合根。代表一个物理或虚拟 BERT 设备，
-/// 管理连接生命周期、通道配置和设备状态。
+/// Device 聚合根。代表一台物理或虚拟 BERT 设备。
 /// </summary>
 public class Device : BaseAggregateRoot
 {
-    /// <summary>设备唯一标识</summary>
+    private string? _infoModel;
+    private string? _infoSerialNumber;
+    private string? _infoFirmwareVersion;
+    private string? _infoBoardType;
+    private string? _connectionValue;
+    private ConnectionProtocol? _connectionProtocol;
+    private int? _capabilityMaxLanes;
+    private bool? _capabilitySupportsPAM4;
+    private bool? _capabilitySupportsAdvancedModulation;
+    private string? _capabilitySupportedPatternsJson;
+    private decimal? _capabilityMaxBaudRateGBd;
+    private bool? _capabilitySupportsFec;
+    private bool? _capabilitySupportsGpio;
+    private int? _capabilityFirTapCount;
+    private bool? _capabilitySupportsJitterInjection;
+
+    private readonly List<Lane> _lanes = [];
+
     public DeviceId DeviceId => new(Id);
 
-    /// <summary>设备基本信息</summary>
-    public DeviceInfo? Info { get; private set; }
+    public DeviceInfo? Info =>
+        _infoModel is null || _infoSerialNumber is null || _infoFirmwareVersion is null || _infoBoardType is null
+            ? null
+            : new DeviceInfo(_infoModel, _infoSerialNumber, _infoFirmwareVersion, _infoBoardType);
 
-    /// <summary>连接字符串</summary>
-    public ConnectionString? Connection { get; private set; }
+    public ConnectionString? Connection =>
+        _connectionValue is null || _connectionProtocol is null
+            ? null
+            : ConnectionString.Parse(_connectionValue);
 
-    /// <summary>当前连接状态</summary>
     public ConnectionState State { get; private set; }
 
-    /// <summary>设备能力声明</summary>
-    public DeviceCapability? Capability { get; private set; }
+    public DeviceCapability? Capability =>
+        _capabilityMaxLanes is null ||
+        _capabilitySupportsPAM4 is null ||
+        _capabilitySupportsAdvancedModulation is null ||
+        _capabilitySupportedPatternsJson is null ||
+        _capabilityMaxBaudRateGBd is null ||
+        _capabilitySupportsFec is null ||
+        _capabilitySupportsGpio is null ||
+        _capabilityFirTapCount is null ||
+        _capabilitySupportsJitterInjection is null
+            ? null
+            : new DeviceCapability(
+                _capabilityMaxLanes.Value,
+                _capabilitySupportsPAM4.Value,
+                _capabilitySupportsAdvancedModulation.Value,
+                JsonSerializer.Deserialize<IReadOnlyList<string>>(_capabilitySupportedPatternsJson) ?? [],
+                _capabilityMaxBaudRateGBd.Value,
+                _capabilitySupportsFec.Value,
+                _capabilitySupportsGpio.Value,
+                _capabilityFirTapCount.Value,
+                _capabilitySupportsJitterInjection.Value);
 
-    /// <summary>通道列表（只读）</summary>
-    private readonly List<Lane> _lanes = [];
     public IReadOnlyList<Lane> Lanes => _lanes.AsReadOnly();
 
-    /// <summary>当前设备名称/别名</summary>
     public string DeviceName { get; private set; }
 
     private Device() : base()
@@ -44,60 +80,43 @@ public class Device : BaseAggregateRoot
         State = ConnectionState.Disconnected;
     }
 
-    /// <summary>
-    /// 创建新设备聚合（不指定 ID，自动生成）。
-    /// </summary>
     public static Device Create(string deviceName)
     {
-        var device = new Device(DeviceId.New(), deviceName);
-        return device;
+        return new Device(DeviceId.New(), deviceName);
     }
 
-    /// <summary>
-    /// 注册设备信息和能力声明（通常在连接成功后由适配器回调）。
-    /// </summary>
     public void RegisterDeviceInfo(DeviceInfo info, DeviceCapability capability)
     {
         if (State != ConnectionState.Connecting)
             throw new InvalidOperationException("只能在连接过程中注册设备信息。");
 
-        Info = info ?? throw new ArgumentNullException(nameof(info));
-        Capability = capability ?? throw new ArgumentNullException(nameof(capability));
+        SetInfo(info ?? throw new ArgumentNullException(nameof(info)));
+        SetCapability(capability ?? throw new ArgumentNullException(nameof(capability)));
 
-        // 根据能力创建 Lane
         _lanes.Clear();
-        for (int i = 0; i < capability.MaxLanes; i++)
+        for (var i = 0; i < capability.MaxLanes; i++)
         {
             _lanes.Add(new Lane(Guid.NewGuid(), i, $"Lane_{i}"));
         }
     }
 
-    /// <summary>
-    /// 标记设备为已连接。
-    /// </summary>
     public void MarkConnected(ConnectionString connection)
     {
-        Connection = connection ?? throw new ArgumentNullException(nameof(connection));
+        SetConnection(connection ?? throw new ArgumentNullException(nameof(connection)));
         State = ConnectionState.Connected;
 
         RaiseDomainEvent(new Events.DeviceConnectedEvent(DeviceId, connection));
     }
 
-    /// <summary>
-    /// 开始连接流程。
-    /// </summary>
     public void BeginConnect(ConnectionString connection)
     {
         if (State == ConnectionState.Connected)
             throw new InvalidOperationException("设备已连接，请先断开。");
 
-        Connection = connection ?? throw new ArgumentNullException(nameof(connection));
+        SetConnection(connection ?? throw new ArgumentNullException(nameof(connection)));
         State = ConnectionState.Connecting;
     }
 
-    /// <summary>
-    /// 断开设备连接。
-    /// </summary>
     public void Disconnect()
     {
         if (State == ConnectionState.Disconnected)
@@ -105,24 +124,18 @@ public class Device : BaseAggregateRoot
 
         State = ConnectionState.Disconnected;
         var connection = Connection;
-        Connection = null;
+        ClearConnection();
 
         if (connection != null)
             RaiseDomainEvent(new Events.DeviceDisconnectedEvent(DeviceId, connection));
     }
 
-    /// <summary>
-    /// 标记连接错误。
-    /// </summary>
     public void MarkError(string errorMessage)
     {
         State = ConnectionState.Error;
         RaiseDomainEvent(new Events.DeviceStateChangedEvent(DeviceId, State, errorMessage));
     }
 
-    /// <summary>
-    /// 获取指定索引的通道，若不存在则抛出异常。
-    /// </summary>
     public Lane GetLane(int laneIndex)
     {
         if (laneIndex < 0 || laneIndex >= _lanes.Count)
@@ -132,9 +145,6 @@ public class Device : BaseAggregateRoot
         return _lanes[laneIndex];
     }
 
-    /// <summary>
-    /// 启用指定通道的码型发生器。
-    /// </summary>
     public void EnablePatternGenerator(int laneIndex, string pattern)
     {
         EnsureConnected();
@@ -142,9 +152,6 @@ public class Device : BaseAggregateRoot
         lane.EnablePatternGenerator(pattern);
     }
 
-    /// <summary>
-    /// 禁用指定通道的码型发生器。
-    /// </summary>
     public void DisablePatternGenerator(int laneIndex)
     {
         EnsureConnected();
@@ -152,9 +159,6 @@ public class Device : BaseAggregateRoot
         lane.DisablePatternGenerator();
     }
 
-    /// <summary>
-    /// 启用指定通道的误码检测器。
-    /// </summary>
     public void EnableErrorDetector(int laneIndex)
     {
         EnsureConnected();
@@ -162,9 +166,6 @@ public class Device : BaseAggregateRoot
         lane.EnableErrorDetector();
     }
 
-    /// <summary>
-    /// 禁用指定通道的误码检测器。
-    /// </summary>
     public void DisableErrorDetector(int laneIndex)
     {
         EnsureConnected();
@@ -172,9 +173,6 @@ public class Device : BaseAggregateRoot
         lane.DisableErrorDetector();
     }
 
-    /// <summary>
-    /// 更改设备名称。
-    /// </summary>
     public void Rename(string newName)
     {
         if (string.IsNullOrWhiteSpace(newName))
@@ -186,5 +184,38 @@ public class Device : BaseAggregateRoot
     {
         if (State != ConnectionState.Connected)
             throw new InvalidOperationException("设备未连接，无法执行操作。");
+    }
+
+    private void SetInfo(DeviceInfo info)
+    {
+        _infoModel = info.Model;
+        _infoSerialNumber = info.SerialNumber;
+        _infoFirmwareVersion = info.FirmwareVersion;
+        _infoBoardType = info.BoardType;
+    }
+
+    private void SetConnection(ConnectionString connection)
+    {
+        _connectionValue = connection.Value;
+        _connectionProtocol = connection.Protocol;
+    }
+
+    private void ClearConnection()
+    {
+        _connectionValue = null;
+        _connectionProtocol = null;
+    }
+
+    private void SetCapability(DeviceCapability capability)
+    {
+        _capabilityMaxLanes = capability.MaxLanes;
+        _capabilitySupportsPAM4 = capability.SupportsPAM4;
+        _capabilitySupportsAdvancedModulation = capability.SupportsAdvancedModulation;
+        _capabilitySupportedPatternsJson = JsonSerializer.Serialize(capability.SupportedPatterns);
+        _capabilityMaxBaudRateGBd = capability.MaxBaudRateGBd;
+        _capabilitySupportsFec = capability.SupportsFec;
+        _capabilitySupportsGpio = capability.SupportsGpio;
+        _capabilityFirTapCount = capability.FirTapCount;
+        _capabilitySupportsJitterInjection = capability.SupportsJitterInjection;
     }
 }
