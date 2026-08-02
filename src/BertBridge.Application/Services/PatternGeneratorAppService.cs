@@ -24,8 +24,10 @@ public class PatternGeneratorAppService : IPatternGeneratorAppService
         var device = await _deviceRepository.GetByIdAsync(new DeviceId(deviceId), ct)
             ?? throw new InvalidOperationException("设备不存在。");
 
-        var adapter = _adapterFactory.GetAdapter(deviceId)
-            ?? throw new InvalidOperationException("设备未连接。");
+        var connection = device.Connection
+            ?? throw new InvalidOperationException("设备未配置连接信息。");
+        var adapter = await _adapterFactory.GetOrConnectAsync(deviceId,
+            PluginSDK.ConnectionString.Parse(connection.Value), ct);
 
         await adapter.ConfigurePgAsync(laneIndex, new PgConfiguration(
             config.Pattern, config.Mode, config.CustomPattern,
@@ -40,8 +42,10 @@ public class PatternGeneratorAppService : IPatternGeneratorAppService
         var device = await _deviceRepository.GetByIdAsync(new DeviceId(deviceId), ct)
             ?? throw new InvalidOperationException("设备不存在。");
 
-        var adapter = _adapterFactory.GetAdapter(deviceId)
-            ?? throw new InvalidOperationException("设备未连接。");
+        var connection = device.Connection
+            ?? throw new InvalidOperationException("设备未配置连接信息。");
+        var adapter = await _adapterFactory.GetOrConnectAsync(deviceId,
+            PluginSDK.ConnectionString.Parse(connection.Value), ct);
 
         var lane = device.GetLane(laneIndex);
         device.EnablePatternGenerator(laneIndex, lane.CurrentPattern ?? "PRBS31");
@@ -54,8 +58,10 @@ public class PatternGeneratorAppService : IPatternGeneratorAppService
         var device = await _deviceRepository.GetByIdAsync(new DeviceId(deviceId), ct)
             ?? throw new InvalidOperationException("设备不存在。");
 
-        var adapter = _adapterFactory.GetAdapter(deviceId)
-            ?? throw new InvalidOperationException("设备未连接。");
+        var connection = device.Connection
+            ?? throw new InvalidOperationException("设备未配置连接信息。");
+        var adapter = await _adapterFactory.GetOrConnectAsync(deviceId,
+            PluginSDK.ConnectionString.Parse(connection.Value), ct);
 
         device.DisablePatternGenerator(laneIndex);
         await adapter.EnablePgAsync(laneIndex, false, ct);

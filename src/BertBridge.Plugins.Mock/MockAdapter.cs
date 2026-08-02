@@ -163,6 +163,8 @@ public sealed class MockAdapter : IDeviceAdapter
                 CdrLocked: false,
                 PllLocked: false,
                 DspReady: false,
+                FecLocked: false,
+                AlignmentLocked: false,
                 Timestamp: DateTime.UtcNow
             ));
         }
@@ -191,6 +193,8 @@ public sealed class MockAdapter : IDeviceAdapter
             CdrLocked: true,
             PllLocked: true,
             DspReady: true,
+            FecLocked: true,
+            AlignmentLocked: true,
             Timestamp: DateTime.UtcNow
         ));
     }

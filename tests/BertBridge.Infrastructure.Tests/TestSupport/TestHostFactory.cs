@@ -29,7 +29,22 @@ internal static class TestHostFactory
         services.AddBertBridgeApplication();
         services.AddBertBridgeInfrastructure(configuration);
         services.AddMockPlugin();
-        services.AddDbContext<BertBridgeDbContext>(options => options.UseSqlite(connection));
+
+        // 替换 AddBertBridgeInfrastructure 注册的 DbContext，使用共享的 in-memory 连接。
+        // DbContext 和 DbContextOptions 都要移除，否则不同 scope 可能拿到不同的 SQLite :memory: 连接。
+        for (var i = services.Count - 1; i >= 0; i--)
+        {
+            var serviceType = services[i].ServiceType;
+            if (serviceType == typeof(BertBridgeDbContext) ||
+                serviceType == typeof(DbContextOptions<BertBridgeDbContext>) ||
+                serviceType == typeof(DbContextOptions))
+            {
+                services.RemoveAt(i);
+            }
+        }
+
+        services.AddDbContext<BertBridgeDbContext>(options =>
+            options.UseSqlite(connection));
 
         var provider = services.BuildServiceProvider();
         await using var scope = provider.CreateAsyncScope();

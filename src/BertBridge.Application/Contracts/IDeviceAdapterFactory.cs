@@ -13,6 +13,15 @@ public interface IDeviceAdapterFactory
     /// <summary>获取指定设备的适配器</summary>
     IDeviceAdapter? GetAdapter(Guid deviceId);
 
+    /// <summary>
+    /// 获取适配器；若不在线则根据连接字符串自动创建并重连。
+    /// 适用于 CLI 等短生命周期进程场景。
+    /// </summary>
+    ValueTask<IDeviceAdapter> GetOrConnectAsync(
+        Guid deviceId,
+        PluginSDK.ConnectionString connectionString,
+        CancellationToken ct = default);
+
     /// <summary>注册适配器（连接时调用）</summary>
     void RegisterAdapter(Guid deviceId, IDeviceAdapter adapter);
 

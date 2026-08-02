@@ -37,6 +37,28 @@ public class DeviceAdapterFactory : IDeviceAdapterFactory
         return adapter;
     }
 
+    public async ValueTask<IDeviceAdapter> GetOrConnectAsync(
+        Guid deviceId,
+        ConnectionString connectionString,
+        CancellationToken ct = default)
+    {
+        if (_onlineAdapters.TryGetValue(deviceId, out var existing))
+            return existing;
+
+        var adapter = CreateAdapter(connectionString);
+        try
+        {
+            await adapter.ConnectAsync(connectionString, ct);
+            RegisterAdapter(deviceId, adapter);
+            return adapter;
+        }
+        catch
+        {
+            await adapter.DisposeAsync();
+            throw;
+        }
+    }
+
     public void RegisterAdapter(Guid deviceId, IDeviceAdapter adapter)
     {
         _onlineAdapters[deviceId] = adapter;
@@ -68,7 +90,12 @@ public class DeviceAdapterFactory : IDeviceAdapterFactory
         }
         finally
         {
-            adapter.DisposeAsync().AsTask().GetAwaiter().GetResult();
+            if (adapter is IAsyncDisposable asyncDisposable)
+            {
+                var task = asyncDisposable.DisposeAsync();
+                if (!task.IsCompleted)
+                    task.AsTask().GetAwaiter().GetResult();
+            }
         }
     }
 }

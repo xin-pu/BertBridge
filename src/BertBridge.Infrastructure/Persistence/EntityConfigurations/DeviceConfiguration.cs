@@ -55,6 +55,12 @@ public class DeviceConfiguration : IEntityTypeConfiguration<Device>
             .HasForeignKey("DeviceId")
             .OnDelete(DeleteBehavior.Cascade);
 
+        var lanesNavigation = builder.Metadata.FindNavigation(nameof(Device.Lanes))
+            ?? throw new InvalidOperationException("Device.Lanes navigation is not configured.");
+
+        lanesNavigation.SetField("_lanes");
+        lanesNavigation.SetPropertyAccessMode(PropertyAccessMode.Field);
+
         builder.Navigation(d => d.Lanes).AutoInclude();
         builder.Ignore(d => d.DomainEvents);
     }

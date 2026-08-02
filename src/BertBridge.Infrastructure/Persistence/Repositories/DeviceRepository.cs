@@ -17,6 +17,7 @@ public class DeviceRepository : IDeviceRepository
 
     public async Task<Device?> GetByIdAsync(DeviceId id, CancellationToken ct = default)
         => await _context.Devices
+            .Include(d => d.Lanes)
             .FirstOrDefaultAsync(d => d.Id == id.Value, ct);
 
     public async Task<Device?> GetByConnectionStringAsync(ConnectionString cs, CancellationToken ct = default)
@@ -36,8 +37,30 @@ public class DeviceRepository : IDeviceRepository
 
     public async Task UpdateAsync(Device device, CancellationToken ct = default)
     {
+        var laneSnapshots = device.Lanes
+            .Select(l => new
+            {
+                l.Id,
+                l.LaneName,
+                l.PgEnabled,
+                l.EdEnabled,
+                l.CurrentPattern
+            })
+            .ToList();
+
         _context.Devices.Update(device);
         await _context.SaveChangesAsync(ct);
+
+        foreach (var lane in laneSnapshots)
+        {
+            await _context.Lanes
+                .Where(l => l.Id == lane.Id)
+                .ExecuteUpdateAsync(setters => setters
+                    .SetProperty(l => l.LaneName, lane.LaneName)
+                    .SetProperty(l => l.PgEnabled, lane.PgEnabled)
+                    .SetProperty(l => l.EdEnabled, lane.EdEnabled)
+                    .SetProperty(l => l.CurrentPattern, lane.CurrentPattern), ct);
+        }
     }
 
     public async Task DeleteAsync(DeviceId id, CancellationToken ct = default)

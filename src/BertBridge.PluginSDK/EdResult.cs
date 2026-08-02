@@ -12,5 +12,7 @@ public sealed record EdResult(
     bool CdrLocked,
     bool PllLocked,
     bool DspReady,
+    bool FecLocked,
+    bool AlignmentLocked,
     DateTime Timestamp
 );
